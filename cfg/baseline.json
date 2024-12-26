@@ -1,0 +1,24 @@
+{
+    "data": {
+        "batch_size": 16,
+        "num_workers": 8,
+        "aug": false
+    }, 
+    "training": {
+        "epochs": 10,
+        "lr": 0.0005,
+        "finetune": false,
+        "plot": false,
+        "save": true
+    }, 
+    "model": {
+        "type": "baseline",
+        "name": "baseline",
+        "in_channels": [128],
+        "dropout_rate": 0.5
+    }, 
+    "eval": {
+        "plot": false,
+        "save": true
+    }
+}

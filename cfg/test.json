@@ -1,0 +1,26 @@
+{
+    "data": {   
+        "batch_size": 16,
+        "num_workers": 8,
+        "aug": false
+    }, 
+    "training": {
+        "epochs": 1,
+        "lr": 0.0001,
+        "finetune": false,
+        "plot": false,
+        "save": false
+    }, 
+    "model": {
+        "type": "attention",
+        "name": "test",
+        "reduction_ratio": 16,
+        "kernel_size": 7,
+        "in_channels": [256, 128, 64],
+        "dropout_rate": 0.5
+    }, 
+    "eval": {
+        "plot": false,
+        "save": false
+    }
+}
