@@ -16,7 +16,7 @@
         "name": "attention",
         "reduction_ratio": 16,
         "kernel_size": 7,
-        "in_channels": [128, 64, 8],
+        "in_channels": [128, 64, 32],
         "dropout_rate": 0.5
     }, 
     "eval": {

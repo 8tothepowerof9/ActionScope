@@ -73,7 +73,7 @@ class AttentionModel(nn.Module):
         kernel_size,
         finetune=False,
         dropout_rate=0.5,
-        in_channels=[256, 128, 8],
+        in_channels=[256, 128, 32],
         name="attention",
     ):
         super().__init__()
@@ -114,6 +114,7 @@ class AttentionModel(nn.Module):
             nn.Linear(n_feats, in_channels[2]),
             nn.BatchNorm1d(in_channels[2]),
             nn.ReLU(),
+            nn.Dropout(dropout_rate),
         )
 
         # Classification layers

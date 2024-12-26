@@ -58,6 +58,9 @@ class Trainer:
 
         self.model.train()
 
+        λ1 = 0.7  # Weight for action loss
+        λ2 = 0.3  # Weight for person loss
+
         for batch, (img, action, person) in enumerate(self.dataloaders["train"]):
             img, action, person = (
                 img.to(self.device),
@@ -69,7 +72,7 @@ class Trainer:
 
             action_loss = self.loss_fns[0](action_pred, action)
             person_loss = self.loss_fns[1](person_pred, person)
-            loss = action_loss + person_loss
+            loss = λ1 * action_loss + λ2 * person_loss
             total_loss += loss.item()
 
             # Backpropagation
