@@ -1,7 +1,11 @@
 from torch import nn
 import torch
-from torchvision.models import resnet50, ResNet50_Weights
-from torch.nn import init
+from torchvision.models import (
+    resnet50,
+    ResNet50_Weights,
+    mobilenet_v3_small,
+    MobileNet_V3_Small_Weights,
+)
 
 
 class ChannelAttention(nn.Module):
@@ -79,28 +83,44 @@ class AttentionModel(nn.Module):
         super().__init__()
 
         self.name = name
-        self.backbone = resnet50(weights=ResNet50_Weights.DEFAULT)
+        self.action_backbone = resnet50(weights=ResNet50_Weights.DEFAULT)
+        self.person_backbone = mobilenet_v3_small(
+            weights=MobileNet_V3_Small_Weights.DEFAULT
+        )
 
-        # Freeze backbone if finetune
+        # Action block
         if not finetune:
-            for param in self.backbone.parameters():
+            for param in self.action_backbone.parameters():
                 param.requires_grad = False
 
-        n_feats = self.backbone.fc.in_features
-        self.backbone.fc = nn.Identity()
-
-        self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
+        action_n_feats = self.action_backbone.fc.in_features
+        self.action_backbone.fc = nn.Identity()
+        self.action_backbone = nn.Sequential(
+            *list(self.action_backbone.children())[:-2]
+        )
 
         # Add attention modules to the backbone and replace the fully connected layer
-        self.att = CBAM(n_feats, reduction_ratio, kernel_size)
-        self.sa = ChannelAttention(n_feats, reduction_ratio)
+        self.action_att = CBAM(action_n_feats, reduction_ratio, kernel_size)
+
+        # Person block
+        if not finetune:
+            for param in self.person_backbone.parameters():
+                param.requires_grad = False
+
+        person_n_feats = self.person_backbone.classifier[0].in_features
+        self.person_backbone.classifier = nn.Identity()
+        self.person_backbone = nn.Sequential(
+            *list(self.person_backbone.children())[:-2]
+        )
+
+        self.person_att = SpatialAttention(kernel_size)
 
         # Pooling
         self.pool_1 = nn.AdaptiveAvgPool2d(1)
         self.pool_2 = nn.AdaptiveAvgPool2d(1)
 
         self.action_fc = nn.Sequential(
-            nn.Linear(n_feats, in_channels[0]),
+            nn.Linear(action_n_feats, in_channels[0]),
             nn.BatchNorm1d(in_channels[0]),
             nn.ReLU(),
             nn.Dropout(dropout_rate),
@@ -111,7 +131,7 @@ class AttentionModel(nn.Module):
         )
 
         self.person_fc = nn.Sequential(
-            nn.Linear(n_feats, in_channels[2]),
+            nn.Linear(person_n_feats, in_channels[2]),
             nn.BatchNorm1d(in_channels[2]),
             nn.ReLU(),
             nn.Dropout(dropout_rate),
@@ -122,15 +142,16 @@ class AttentionModel(nn.Module):
         self.person_out = nn.Linear(in_channels[2], 1)
 
     def forward(self, x):
-        x = self.backbone(x)
-
-        action = self.att(x)
+        action = self.action_backbone(x)
+        action = self.action_att(action)
         action = torch.flatten(self.pool_1(action), 1)
         action = self.action_fc(action)
         action = self.action_out(action)
 
-        person = self.sa(x)
+        person = self.person_backbone(x)
+        person = self.person_att(person)
         person = torch.flatten(self.pool_2(person), 1)
         person = self.person_fc(person)
         person = self.person_out(person)
+
         return action, person
