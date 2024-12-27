@@ -215,11 +215,3 @@ class Evaluator:
                     plt.savefig(
                         self.save_dir + f"{self.model_name}_person_{person_class}.png"
                     )
-
-    def action_activation_map(self, action):
-        # Given an action class, plots the activation map of the model for that class
-        pass
-
-    def person_activation_map(self, person_num):
-        # Given a MoreThanOnePerson status, plots the activation map of the model for that status
-        pass
